@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gear Power Calculator v3 (Clean UI)</title>
+<style>
+:root{
+  --bg:#0b0f14;--card:#121821;--fg:#e7eef7;--muted:#a8b3c4;--border:#1e2733;--accent:#7cc4ff;--field:#0f141b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial}
+.wrap{max-width:1200px;margin:0 auto;padding:20px}
+h1{margin:0 0 8px;font-size:24px}
+h2{margin:16px 0 10px;font-size:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.grid{display:grid;gap:14px}
+.grid2{grid-template-columns:1fr 1fr}
+.grid3{grid-template-columns:repeat(3,1fr)}
+label{display:block;margin:6px 0 6px;color:var(--muted);font-size:13px}
+input,select,textarea{width:100%;background:var(--field);color:var(--fg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:15px}
+button{border:1px solid var(--border);background:var(--field);color:var(--fg);padding:10px 12px;border-radius:12px;cursor:pointer;font-size:14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#00182b}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.out{font-family:ui-monospace,Consolas,Menlo,monospace;background:var(--field);border:1px solid var(--border);border-radius:12px;padding:12px;white-space:pre-wrap}
+.small{font-size:13px;color:var(--muted)}
+.section{margin-top:10px;font-weight:600}
+.itemCard{background:#0e141c;border:1px solid var(--border);border-radius:14px;padding:12px}
+.itemHeader{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.itemTitle{font-weight:700}
+.group{background:#0f141b;border:1px solid var(--border);border-radius:12px;padding:10px}
+.groupTitle{font-size:13px;color:var(--muted);margin-bottom:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+hr.sep{border:0;border-top:1px solid var(--border);margin:10px 0}
+.kbd{background:var(--field);border:1px solid var(--border);border-radius:8px;padding:3px 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gear Power Calculator v3</h1>
+  <div class="small">Cleaner, larger inputs + item cards. Subtract item deltas from your final sheet to get true BaseProperty, then compute Power.</div>
+
+  <div class="grid grid2" style="margin-top:12px;">
+    <div class="card">
+      <h2>Class & Weights</h2>
+      <div class="grid grid3">
+        <div>
+          <label>Preset</label>
+          <select id="classPreset">
+            <option value="Acolyte">Acolyte [13,10,1.6,5,3]</option>
+            <option value="Guardian">Guardian [10,15,1,1,1]</option>
+            <option value="Scout">Scout [20,7,0.9,3,5]</option>
+            <option value="Custom">Custom…</option>
+          </select>
+        </div>
+        <div>
+          <label>PowerPara (csv)</label>
+          <input id="weights" value="13,10,1.6,5,3">
+        </div>
+        <div>
+          <label>Damage Type</label>
+          <select id="dmgType">
+            <option value="magicalDamage">Magical</option>
+            <option value="physicalDamage">Physical</option>
+          </select>
+        </div>
+      </div>
+
+      <h2 style="margin-top:12px">Final Character Sheet (with gear equipped)</h2>
+      <div class="grid grid3">
+        <div><label>Magical DMG avg</label><input id="magDmg" value="0"></div>
+        <div><label>Physical DMG avg</label><input id="phyDmg" value="0"></div>
+        <div><label>Crit Chance (0-1)</label><input id="crit" value="0.0"></div>
+        <div><label>Crit Mult</label><input id="critMult" value="1.5"></div>
+        <div><label>Damage Bonus (0-1)</label><input id="dmgBoost" value="0.0"></div>
+        <div><label>Attack Speed</label><input id="atkSpd" value="1.0"></div>
+        <div><label>Cooldown (0-1)</label><input id="cooldown" value="0.0"></div>
+        <div><label>Armor Pen (0-1)</label><input id="armorPen" value="0.0"></div>
+        <div><label>Hit Rate (0-1)</label><input id="hitRate" value="1.0"></div>
+        <div><label>Health Max</label><input id="hp" value="0"></div>
+        <div><label>Stamina Max</label><input id="stam" value="0"></div>
+        <div><label>Dodge (0-1)</label><input id="dodge" value="0.0"></div>
+        <div><label>Tenacity (0-1)</label><input id="tenacity" value="0.0"></div>
+        <div><label>Health Regen /s</label><input id="hpRegen" value="0"></div>
+        <div><label>Physical Def</label><input id="pDef" value="0"></div>
+        <div><label>Magical Def</label><input id="mDef" value="0"></div>
+        <div><label>Mana Max</label><input id="mana" value="0"></div>
+        <div><label>Mana Regen /s</label><input id="manaRegen" value="0"></div>
+        <div><label>Luck</label><input id="luck" value="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Per-Item Property Deltas</h2>
+      <div class="small">Add a card per item. Fill only what that item grants (use 0–1 for percents, e.g. 8.4% → 0.084).</div>
+      <div class="row" style="margin:8px 0 10px;">
+        <button id="add" class="primary">Add Item</button>
+        <button id="autoDemo">Demo: sample gear</button>
+        <button id="clear">Clear</button>
+      </div>
+      <div id="itemsPane" class="grid" style="grid-template-columns:1fr;gap:12px;max-height:360px;overflow:auto;"></div>
+      <hr class="sep"/>
+      <div class="row">
+        <button id="subtract" class="primary">Subtract Items → Compute Base Power</button>
+        <button id="deriveBase">Derive Base from UI total</button>
+        <div style="flex:1"></div>
+        <div style="min-width:280px">
+          <label>Σ(item card power)</label>
+          <textarea id="itemsPower" rows="3" placeholder="One card power number per line"></textarea>
+        </div>
+        <div style="min-width:180px">
+          <label>UI Total Power</label>
+          <input id="uiTotal" value="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2>Output</h2>
+    <div id="out" class="out">Add your sheet & items, then click “Subtract Items”.</div>
+  </div>
+</div>
+
+<script>
+function num(x){ const n = Number(x); return isFinite(n)?n:0; }
+function parseWeights(s){ const a=s.split(',').map(num); while(a.length<5) a.push(1); return a.slice(0,5); }
+
+function powerFromProps(props, dmgType, weights){
+  const dP = num(props.physicalDamage||0);
+  const dM = num(props.magicalDamage||0);
+  const crit = num(props.criticalRate||0);
+  const critMult = num(props.criticalDamageMultiplier||1.5);
+  const dmgBoost = num(props.damageBoost||0);
+  const atkSpd = num(props.attackSpeed||1);
+  const cooldown = num(props.cooldown||0);
+  const armorPen = num(props.armorPenetration||0);
+  const hitRate = num(props.hitRate||1);
+  const hp = num(props.healthMax||0);
+  const dodge = num(props.dodgeRate||0);
+  const stam = num(props.staminaMax||0);
+  const hpRegen = num(props.healthRegen||0);
+  const tenacity = num(props.tenacity||0);
+  const pDef = num(props.physicalDefence||0);
+  const mDef = num(props.magicalDefence||0);
+  const mana = num(props.manaMax||0);
+  const manaRegen = num(props.manaRegen||0);
+  const luck = num(props.luck||0);
+
+  function damageTerm(d){
+    const critBonus = d * (crit * (critMult - 1));
+    const boost = d * dmgBoost;
+    const atk = d * (atkSpd - 1);
+    const cd = d * (cooldown / Math.max(1 - cooldown, 1e-9)) * 0.3;
+    const pen = d * armorPen * 0.25;
+    const hit = d * (hitRate - 1) * 0.5;
+    return d + critBonus + boost + atk + cd + pen + hit;
+  }
+  const dmgMagic = damageTerm(dM);
+  const dmgPhys = damageTerm(dP);
+
+  const healthTerm = hp + stam + hp * dodge + hp * tenacity * 0.1 + hpRegen * 60;
+  const defTerm = (pDef + mDef) / 2;
+  const manaTerm = mana + manaRegen * 60;
+
+  const w = weights;
+  const damage = (dmgType==='magicalDamage'?dmgMagic:dmgPhys);
+  return w[0]*damage + w[1]*defTerm + w[2]*healthTerm + (w[3]||1)*manaTerm + (w[4]||1)*0;
+}
+
+let itemId = 0;
+function itemCard(values={}){
+  const id = ++itemId;
+  const wrap = document.createElement('div');
+  wrap.className = 'itemCard';
+  wrap.dataset.id = id;
+
+  wrap.innerHTML = `
+    <div class="itemHeader">
+      <div class="itemTitle"><input placeholder="Item label" value="${values.label||''}"></div>
+      <div class="row">
+        <button class="del">Remove</button>
+      </div>
+    </div>
+    <div class="group" style="margin-top:10px;">
+      <div class="groupTitle">Damage</div>
+      <div class="three">
+        <div><label>Magical DMG</label><input data-k="magicalDamage" value="${values.magicalDamage??''}"></div>
+        <div><label>Physical DMG</label><input data-k="physicalDamage" value="${values.physicalDamage??''}"></div>
+        <div><label>Damage Bonus (0-1)</label><input data-k="damageBoost" value="${values.damageBoost??''}"></div>
+      </div>
+      <div class="three" style="margin-top:8px;">
+        <div><label>Crit Chance (0-1)</label><input data-k="criticalRate" value="${values.criticalRate??''}"></div>
+        <div><label>Crit Mult</label><input data-k="criticalDamageMultiplier" value="${values.criticalDamageMultiplier??''}"></div>
+        <div><label>Attack Speed</label><input data-k="attackSpeed" value="${values.attackSpeed??''}"></div>
+      </div>
+      <div class="three" style="margin-top:8px;">
+        <div><label>Cooldown (0-1)</label><input data-k="cooldown" value="${values.cooldown??''}"></div>
+        <div><label>Armor Pen (0-1)</label><input data-k="armorPenetration" value="${values.armorPenetration??''}"></div>
+        <div><label>Hit Rate (0-1)</label><input data-k="hitRate" value="${values.hitRate??''}"></div>
+      </div>
+    </div>
+
+    <div class="group" style="margin-top:10px;">
+      <div class="groupTitle">Survivability</div>
+      <div class="three">
+        <div><label>Health Max</label><input data-k="healthMax" value="${values.healthMax??''}"></div>
+        <div><label>Stamina Max</label><input data-k="staminaMax" value="${values.staminaMax??''}"></div>
+        <div><label>Dodge (0-1)</label><input data-k="dodgeRate" value="${values.dodgeRate??''}"></div>
+      </div>
+      <div class="three" style="margin-top:8px;">
+        <div><label>Tenacity (0-1)</label><input data-k="tenacity" value="${values.tenacity??''}"></div>
+        <div><label>Health Regen /s</label><input data-k="healthRegen" value="${values.healthRegen??''}"></div>
+        <div><label>—</label><input disabled placeholder="(unused)"></div>
+      </div>
+      <div class="three" style="margin-top:8px;">
+        <div><label>Physical Def</label><input data-k="physicalDefence" value="${values.physicalDefence??''}"></div>
+        <div><label>Magical Def</label><input data-k="magicalDefence" value="${values.magicalDefence??''}"></div>
+        <div><label>Luck</label><input data-k="luck" value="${values.luck??''}"></div>
+      </div>
+    </div>
+
+    <div class="group" style="margin-top:10px;">
+      <div class="groupTitle">Resources</div>
+      <div class="three">
+        <div><label>Mana Max</label><input data-k="manaMax" value="${values.manaMax??''}"></div>
+        <div><label>Mana Regen /s</label><input data-k="manaRegen" value="${values.manaRegen??''}"></div>
+        <div><label>—</label><input disabled placeholder="(unused)"></div>
+      </div>
+    </div>
+  `;
+
+  wrap.querySelector('.del').onclick = ()=> wrap.remove();
+  return wrap;
+}
+
+function collectItemDeltas(){
+  const pane = document.getElementById('itemsPane');
+  const cards = Array.from(pane.children);
+  const rows = [];
+  cards.forEach(card=>{
+    const obj = { label: card.querySelector('.itemTitle input').value };
+    card.querySelectorAll('input[data-k]').forEach(inp=>{
+      const k = inp.dataset.k;
+      const v = inp.value.trim();
+      if (v !== '') obj[k] = Number(v);
+    });
+    rows.push(obj);
+  });
+  return rows;
+}
+
+function subtractAndCompute(){
+  const weights=parseWeights(document.getElementById('weights').value);
+  const dmgType=document.getElementById('dmgType').value;
+
+  // read final sheet
+  const base={
+    magicalDamage:Number(document.getElementById('magDmg').value),
+    physicalDamage:Number(document.getElementById('phyDmg').value),
+    criticalRate:Number(document.getElementById('crit').value),
+    criticalDamageMultiplier:Number(document.getElementById('critMult').value),
+    damageBoost:Number(document.getElementById('dmgBoost').value),
+    attackSpeed:Number(document.getElementById('atkSpd').value),
+    cooldown:Number(document.getElementById('cooldown').value),
+    armorPenetration:Number(document.getElementById('armorPen').value),
+    hitRate:Number(document.getElementById('hitRate').value),
+    healthMax:Number(document.getElementById('hp').value),
+    staminaMax:Number(document.getElementById('stam').value),
+    dodgeRate:Number(document.getElementById('dodge').value),
+    tenacity:Number(document.getElementById('tenacity').value),
+    healthRegen:Number(document.getElementById('hpRegen').value),
+    physicalDefence:Number(document.getElementById('pDef').value),
+    magicalDefence:Number(document.getElementById('mDef').value),
+    manaMax:Number(document.getElementById('mana').value),
+    manaRegen:Number(document.getElementById('manaRegen').value),
+    luck:Number(document.getElementById('luck').value)
+  };
+
+  // subtract items
+  const rows = collectItemDeltas();
+  const sum = {magicalDamage:0,physicalDamage:0,criticalRate:0,criticalDamageMultiplier:0,damageBoost:0,attackSpeed:0,cooldown:0,armorPenetration:0,hitRate:0,healthMax:0,staminaMax:0,dodgeRate:0,tenacity:0,healthRegen:0,physicalDefence:0,magicalDefence:0,manaMax:0,manaRegen:0,luck:0};
+  rows.forEach(r=>{ Object.keys(sum).forEach(k=>{ if(r[k]!==undefined) sum[k]+=Number(r[k])||0; }); });
+  const gearless={}; Object.keys(base).forEach(k=> gearless[k]=base[k] - (sum[k]||0) );
+
+  const basePower = powerFromProps(gearless, dmgType, weights);
+
+  const out=document.getElementById('out');
+  out.textContent =
+`Subtracted ${rows.length} item cards from your sheet.
+
+Gearless (BaseProperty) after subtraction:
+${Object.entries(gearless).map(([k,v])=>`  ${k}: ${v}`).join('\n')}
+
+BaseProperty Power = ${basePower.toFixed(0)} (weights [${weights.join(', ')}], damage=${dmgType})
+
+Tip: If this is too high, add missing deltas (flat HP/def/crit/%dmg, etc.) to the item cards.`;
+}
+
+function deriveBaseFromUITotal(){
+  const ui = Number(document.getElementById('uiTotal').value)||0;
+  const lines = document.getElementById('itemsPower').value.split(/\s+/).map(Number).filter(x=>isFinite(x)&&x>0);
+  const sumItems = lines.reduce((a,b)=>a+b,0);
+  const base = ui - sumItems;
+  document.getElementById('out').textContent =
+`Derived BaseProperty Power from UI:
+  UI total: ${ui}
+  Σ(item card power): ${sumItems}
+  ==> BaseProperty ~ ${base.toFixed(0)}`;
+}
+
+// wire buttons
+document.getElementById('classPreset').addEventListener('change', (e)=>{
+  const v=e.target.value;
+  if(v==='Acolyte') document.getElementById('weights').value='13,10,1.6,5,3';
+  else if(v==='Guardian') document.getElementById('weights').value='10,15,1,1,1';
+  else if(v==='Scout') document.getElementById('weights').value='20,7,0.9,3,5';
+});
+document.getElementById('add').onclick=()=>{
+  document.getElementById('itemsPane').appendChild(itemCard({}));
+};
+document.getElementById('clear').onclick=()=>{
+  document.getElementById('itemsPane').innerHTML='';
+};
+document.getElementById('subtract').onclick=subtractAndCompute;
+document.getElementById('deriveBase').onclick=deriveBaseFromUITotal;
+
+document.getElementById('autoDemo').onclick=()=>{
+  const p = document.getElementById('itemsPane'); p.innerHTML='';
+  p.appendChild(itemCard({label:'Anubis Helmet', healthMax:300, physicalDefence:81, magicalDefence:81, damageBoost:0.112}));
+  p.appendChild(itemCard({label:'Anubis Armor', physicalDefence:71, magicalDefence:71, criticalRate:0.0148}));
+  p.appendChild(itemCard({label:'Hashashin Robe', physicalDefence:77, magicalDefence:77, damageBoost:0.084, criticalRate:0.0259, luck:10}));
+  p.appendChild(itemCard({label:'VIP Crown', healthMax:300, luck:100}));
+  p.appendChild(itemCard({label:'Cloudwalker Necklace', physicalDefence:16, magicalDefence:16, dodgeRate:0.0435}));
+};
+</script>
+</body>
+</html>
